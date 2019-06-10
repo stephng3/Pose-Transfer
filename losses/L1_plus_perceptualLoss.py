@@ -15,14 +15,14 @@ class L1_plus_perceptualLoss(nn.Module):
         self.gpu_ids = gpu_ids
 
         self.percep_is_l1 = percep_is_l1
-
         vgg = models.vgg19(pretrained=True).features
         self.vgg_submodel = nn.Sequential()
         for i,layer in enumerate(list(vgg)):
             self.vgg_submodel.add_module(str(i),layer)
             if i == perceptual_layers:
                 break
-        self.vgg_submodel = torch.nn.DataParallel(self.vgg_submodel, device_ids=gpu_ids).cuda()
+        if len(gpu_ids) > 0:
+            self.vgg_submodel = torch.nn.DataParallel(self.vgg_submodel, device_ids=gpu_ids).cuda()
 
         print(self.vgg_submodel)
 
@@ -37,13 +37,17 @@ class L1_plus_perceptualLoss(nn.Module):
         mean[0] = 0.485
         mean[1] = 0.456
         mean[2] = 0.406
-        mean = mean.resize(1, 3, 1, 1).cuda()
+        mean = mean.resize(1, 3, 1, 1)
 
         std = torch.FloatTensor(3)
         std[0] = 0.229
         std[1] = 0.224
         std[2] = 0.225
-        std = std.resize(1, 3, 1, 1).cuda()
+        std = std.resize(1, 3, 1, 1)
+
+        if len(self.gpu_ids) > 0:
+            mean = mean.cuda()
+            std = std.cuda()
 
         fake_p2_norm = (inputs + 1)/2 # [-1, 1] => [0, 1]
         fake_p2_norm = (fake_p2_norm - mean)/std

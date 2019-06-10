@@ -1,0 +1,7 @@
+.idea/
+results/
+checkpoints/
+
+
+*.sh
+*.pyc
