@@ -18,9 +18,11 @@ class Data():
                  num_workers=0,
                  query_image=None,
                  mode='train',
+                 input_height=384,
+                 input_width=128,
                  **kwargs):
         train_transforms = [
-            transforms.Resize((384, 128), interpolation=3),
+            transforms.Resize((input_height, input_width), interpolation=3),
             transforms.RandomHorizontalFlip(),
             transforms.ToTensor(),
             transforms.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225]),
@@ -30,7 +32,7 @@ class Data():
         train_transform = transforms.Compose(train_transforms)
 
         test_transform = transforms.Compose([
-            transforms.Resize((384, 128), interpolation=3),
+            transforms.Resize((input_height, input_width), interpolation=3),
             transforms.ToTensor(),
             transforms.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225])
         ])

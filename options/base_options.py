@@ -47,7 +47,7 @@ class BaseOptions():
 
         self.parser.add_argument('--with_D_PP', type=int, default=1, help='use D to judge P and P is pair or not')
         self.parser.add_argument('--with_D_PB', type=int, default=1, help='use D to judge P and B is pair or not')
-        self.parser.add_argument('--with_CL', type=int, default=1, help='use contrastive loss for training')
+        self.parser.add_argument('--with_CL', type=int, default=1, help='use cosine embedding loss for training')
 
         self.parser.add_argument('--CL_model', type=str, default='MGN', help='which model to use to generate CL features')
         self.parser.add_argument('--CL_model_path', type=str, default='./reid_mgn/weights/Market1501/model_latest.pt', help='path to load pretrained CL model weights')

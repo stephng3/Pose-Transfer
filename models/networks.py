@@ -158,7 +158,10 @@ def print_network(net):
 def get_CL(CL_model='MGN', CL_model_path=None, lambda_CL=1, gpu_ids=[], **kwargs):
     if CL_model is 'MGN':
         model = load_MGN(CL_model_path)
-        return Cosine_Loss(lambda_CL, model, gpu_ids)
+        loss = Cosine_Loss(lambda_CL, model, gpu_ids)
+        if len(gpu_ids) > 0:
+            loss = torch.nn.DataParallel(loss, device_ids=gpu_ids).cuda()
+        return loss
     else:
         raise Exception('model %s not implemented for CL!' % CL_model)
 

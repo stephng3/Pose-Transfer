@@ -243,7 +243,7 @@ class TransferModel(BaseModel):
             ret_errors['perceptual'] = self.loss_perceptual
 
         if self.opt.with_CL:
-            ret_errors['contrastive'] = self.loss_CL
+            ret_errors['cosine'] = self.loss_CL
 
         return ret_errors
 

@@ -127,6 +127,16 @@ parser.add_argument('--model_name',
                     default='latest',
                     help='load weights from .pt file. latest to load largest epoch model')
 
+parser.add_argument('--input_height',
+                    default=384,
+                    type=int,
+                    help='height of input image into the model (multiple of 128')
+
+parser.add_argument('--input_width',
+                    default=128,
+                    type=int,
+                    help='width of input image into the model (multiple of 64')
+
 opt = parser.parse_args()
 
 str_ids = opt.gpus.split(',')

@@ -4,7 +4,7 @@ import torch.nn as nn
 from torchvision.models.resnet import resnet50, Bottleneck
 
 class MGN(nn.Module):
-    def __init__(self, parts=[1,2,3], num_classes=751, **kwargs):
+    def __init__(self, parts=[1,2,3], num_classes=751, input_height=384, input_width=128, **kwargs):
         super(MGN, self).__init__()
 
         feats = 256
@@ -35,15 +35,20 @@ class MGN(nn.Module):
         self.p2 = nn.Sequential(copy.deepcopy(res_conv4), copy.deepcopy(res_p_conv5))
         self.p3 = nn.Sequential(copy.deepcopy(res_conv4), copy.deepcopy(res_p_conv5))
 
-        self.maxpool_zg_p1 = nn.MaxPool2d(kernel_size=(12, 4))
-        self.maxpool_zg_p2 = nn.MaxPool2d(kernel_size=(24, 8))
-        self.maxpool_zg_p3 = nn.MaxPool2d(kernel_size=(24, 8))
+        zg_p1_height = input_height // 32
+        zg_p1_width = input_width // 32
+        zg_p23_height = input_height // 16
+        zg_p23_width = input_width // 16
 
-        zp2_height = 24 // self.parts[1]
-        zp3_height = 24 // self.parts[2]
+        self.maxpool_zg_p1 = nn.MaxPool2d(kernel_size=(zg_p1_height, zg_p1_width))
+        self.maxpool_zg_p2 = nn.MaxPool2d(kernel_size=(zg_p23_height, zg_p23_width))
+        self.maxpool_zg_p3 = nn.MaxPool2d(kernel_size=(zg_p23_height, zg_p23_width))
 
-        self.maxpool_zp2 = nn.MaxPool2d(kernel_size=(zp2_height, 8))
-        self.maxpool_zp3 = nn.MaxPool2d(kernel_size=(zp3_height, 8))
+        zp2_height = zg_p23_height // self.parts[1]
+        zp3_height = zg_p23_height // self.parts[2]
+
+        self.maxpool_zp2 = nn.MaxPool2d(kernel_size=(zp2_height, zg_p23_width))
+        self.maxpool_zp3 = nn.MaxPool2d(kernel_size=(zp3_height, zg_p23_width))
 
         _reduction = nn.Sequential(nn.Conv2d(2048, feats, 1, bias=False), nn.BatchNorm2d(feats), nn.ReLU())
         self._init_reduction(_reduction)
