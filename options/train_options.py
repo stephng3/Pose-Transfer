@@ -21,6 +21,7 @@ class TrainOptions(BaseOptions):
         self.parser.add_argument('--no_lsgan', action='store_true', help='do *not* use least square GAN, if false, use vanilla GAN')
         self.parser.add_argument('--lambda_A', type=float, default=10.0, help='weight for L1 loss')
         self.parser.add_argument('--lambda_B', type=float, default=10.0, help='weight for perceptual L1 loss')
+        self.parser.add_argument('--lambda_CL', type=float, default=10.0, help='weight for contrastive loss')
         self.parser.add_argument('--lambda_GAN', type=float, default=5.0, help='weight of GAN loss')
 
         self.parser.add_argument('--pool_size', type=int, default=50, help='the size of image buffer that stores previously generated images')

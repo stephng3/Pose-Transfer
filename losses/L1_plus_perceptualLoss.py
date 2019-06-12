@@ -68,6 +68,8 @@ class L1_plus_perceptualLoss(nn.Module):
             loss_perceptual = F.mse_loss(fake_p2_norm, input_p2_norm_no_grad) * self.lambda_perceptual
 
         loss = loss_l1 + loss_perceptual
+        import pdb; pdb.set_trace()
+
 
         return loss, loss_l1, loss_perceptual
 

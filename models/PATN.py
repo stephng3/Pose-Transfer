@@ -70,6 +70,10 @@ class TransferModel(BaseModel):
                 self.criterionL1 = L1_plus_perceptualLoss(opt.lambda_A, opt.lambda_B, opt.perceptual_layers, self.gpu_ids, opt.percep_is_l1)
             else:
                 raise Excption('Unsurportted type of L1!')
+
+            if opt.with_CL:
+                self.criterionCL = networks.get_CL(**opt.__dict__)
+
             # initialize optimizers
             self.optimizer_G = torch.optim.Adam(self.netG.parameters(), lr=opt.lr, betas=(opt.beta1, 0.999))
             if opt.with_D_PB:
@@ -144,6 +148,11 @@ class TransferModel(BaseModel):
             self.loss_G_L1 = self.criterionL1(self.fake_p2, self.input_P2) * self.opt.lambda_A
 
 
+        #Contrastive Loss
+        if self.opt.with_CL:
+            self.loss_CL = self.criterionCL(self.input_P2, self.fake_p2)
+
+
         pair_L1loss = self.loss_G_L1
         if self.opt.with_D_PB:
             pair_GANloss = self.loss_G_GAN_PB * self.opt.lambda_GAN
@@ -154,10 +163,11 @@ class TransferModel(BaseModel):
             if self.opt.with_D_PP:
                 pair_GANloss = self.loss_G_GAN_PP * self.opt.lambda_GAN
 
+        pair_loss = pair_L1loss
         if self.opt.with_D_PB or self.opt.with_D_PP:
-            pair_loss = pair_L1loss + pair_GANloss
-        else:
-            pair_loss = pair_L1loss
+            pair_loss += pair_GANloss
+        if self.opt.with_CL:
+            pair_loss += self.loss_CL
 
         pair_loss.backward()
 
@@ -231,6 +241,9 @@ class TransferModel(BaseModel):
         if self.opt.L1_type == 'l1_plus_perL1':
             ret_errors['origin_L1'] = self.loss_originL1
             ret_errors['perceptual'] = self.loss_perceptual
+
+        if self.opt.with_CL:
+            ret_errors['contrastive'] = self.loss_CL
 
         return ret_errors
 

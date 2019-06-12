@@ -2,6 +2,7 @@
 results/
 checkpoints/
 
-
 *.sh
 *.pyc
+*.pt
+*.pth

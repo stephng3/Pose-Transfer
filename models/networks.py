@@ -6,6 +6,9 @@ from torch.optim import lr_scheduler
 import numpy as np
 import torch.nn.functional as F
 
+from reid_mgn import load_MGN
+from losses.Cosine_Loss import Cosine_Loss
+
 import sys
 from models.model_variants import PATNetwork
 
@@ -150,6 +153,14 @@ def print_network(net):
         num_params += param.numel()
     print(net)
     print('Total number of parameters: %d' % num_params)
+
+
+def get_CL(CL_model='MGN', CL_model_path=None, lambda_CL=1, gpu_ids=[], **kwargs):
+    if CL_model is 'MGN':
+        model = load_MGN(CL_model_path)
+        return Cosine_Loss(lambda_CL, model, gpu_ids)
+    else:
+        raise Exception('model %s not implemented for CL!' % CL_model)
 
 
 ##############################################################################
