@@ -13,7 +13,6 @@ class Cosine_Loss(nn.Module):
         self.gpu_ids = gpu_ids
 
         self.model = model.eval()
-        self.norm = torch.nn.BatchNorm1d((sum(model.parts) + 2) * 256)
         self.cosine_loss = nn.CosineEmbeddingLoss()
 
     def forward(self, fake, real):
@@ -32,26 +31,23 @@ class Cosine_Loss(nn.Module):
         std[2] = 0.225
         std = std.resize(1, 3, 1, 1)
 
+        targets = torch.ones(real.size()[0])
+
         if len(self.gpu_ids) > 0:
             mean = mean.cuda()
             std = std.cuda()
+            targets = targets.cuda()
 
-        fake_p2_norm = (fake + 1)/2 # [-1, 1] => [0, 1]
-        fake_p2_norm = (fake_p2_norm - mean)/std
+        fake_norm = (fake + 1)/2 # [-1, 1] => [0, 1]
+        fake_norm = (fake_norm - mean)/std
 
-        input_p2_norm = (real + 1)/2 # [-1, 1] => [0, 1]
-        input_p2_norm = (input_p2_norm - mean)/std
+        real_norm = (real + 1)/2 # [-1, 1] => [0, 1]
+        real_norm = (real_norm - mean)/std
 
-        fake_p2_norm = self.model(fake_p2_norm)[0]
-        input_p2_norm = self.model(input_p2_norm)[0]
+        fake_emb = self.model(fake_norm)[0]
+        real_emb = self.model(real_norm)[0]
 
-        batch = torch.cat((fake_p2_norm, input_p2_norm), 0)
-        normalised_batch = self.norm(batch)
-        norm_P1, norm_P2 = normalised_batch.split(normalised_batch.size()[0] // 2, 0) # split back to calc distance
-
-        cos_loss = self.cosine_loss(norm_P1, norm_P2, torch.ones(norm_P1.size()[0]))
+        cos_loss = self.cosine_loss(real_emb, fake_emb, targets)
         loss = cos_loss * self.lambda_CL
-
-        import pdb; pdb.set_trace()
 
         return loss

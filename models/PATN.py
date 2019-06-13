@@ -150,8 +150,7 @@ class TransferModel(BaseModel):
 
         #Contrastive Loss
         if self.opt.with_CL:
-            self.loss_CL = self.criterionCL(self.input_P2, self.fake_p2)
-
+            self.loss_CL = self.criterionCL(self.input_P2, self.fake_p2).mean()
 
         pair_L1loss = self.loss_G_L1
         if self.opt.with_D_PB:
@@ -174,7 +173,6 @@ class TransferModel(BaseModel):
         self.pair_L1loss = pair_L1loss.item()
         if self.opt.with_D_PB or self.opt.with_D_PP:
             self.pair_GANloss = pair_GANloss.item()
-
 
     def backward_D_basic(self, netD, real, fake):
         # Real
