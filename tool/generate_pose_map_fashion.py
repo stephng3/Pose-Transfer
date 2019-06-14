@@ -2,12 +2,19 @@ import numpy as np
 import pandas as pd 
 import json
 import os 
+from argparse import ArgumentParser
 
 MISSING_VALUE = -1
-# fix PATH
-img_dir  = '/home/local/YITU-INC/stephen.ng/code/Pose-Transfer/fashion_data' #raw image path
-annotations_file = '/home/local/YITU-INC/stephen.ng/code/Pose-Transfer/fashion_data/fasion-resize-annotation-train.csv' #pose annotation path
-save_path = '/home/local/YITU-INC/stephen.ng/code/Pose-Transfer/fashion_data/trainK' #path to store pose maps
+
+parser = ArgumentParser('Generate pose maps from images')
+parser.add_argument('--dataroot', default='./fashion_data', help='Root directory of dataset')
+parser.add_argument('--dataset', default='train', choices=['train','test'], help='Train or test')
+
+opt = parser.parse_args()
+
+img_dir = os.path.join(opt.dataroot, opt.dataset)
+annotations_file = os.path.join(opt.dataroot, 'fasion-resize-annotation-%s.csv' % opt.dataset)
+save_path = os.path.join(opt.dataroot, opt.dataset + 'K')
 
 def load_pose_cords_from_strings(y_str, x_str):
     y_cords = json.loads(y_str)
@@ -39,7 +46,8 @@ def compute_pose(image_dir, annotations_file, savePath, sigma=6):
         pose = cords_to_map(kp_array, image_size, sigma)
         np.save(file_name, pose)
         # input()
-  
+
+os.makedirs(save_path, exist_ok=True)  
 compute_pose(img_dir, annotations_file, save_path)
 
 
