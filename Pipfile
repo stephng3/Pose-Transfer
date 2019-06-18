@@ -15,6 +15,7 @@ pandas = "*"
 tqdm = "*"
 dominate = "*"
 pillow-simd = "*"
+tensorflow = "*"
 
 [requires]
 python_version = "3.5"

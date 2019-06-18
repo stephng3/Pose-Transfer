@@ -9,6 +9,7 @@ import pandas as pd
 
 from tqdm import tqdm
 import re
+from argparse import ArgumentParser
 
 def l1_score(generated_images, reference_images):
     score_list = []
@@ -61,9 +62,9 @@ def load_generated_images(images_folder):
     for img_name in os.listdir(images_folder):
         img = imread(os.path.join(images_folder, img_name))
         w = int(img.shape[1] / 5) #h, w ,c
-        input_images.append(img[:, :w])
-        target_images.append(img[:, 2*w:3*w])
-        generated_images.append(img[:, 4*w:5*w])
+        input_images.append(np.array(img[:, :w]))
+        target_images.append(np.array(img[:, 2*w:3*w]))
+        generated_images.append(np.array(img[:, 4*w:5*w]))
 
         # assert img_name.endswith('_vis.png'), 'unexpected img name: should end with _vis.png'
         assert img_name.endswith('_vis.png') or img_name.endswith('_vis.jpg'), 'unexpected img name: should end with _vis.png'
@@ -114,15 +115,24 @@ def test(generated_images_dir, annotations_file_test):
 
     print ("Inception score = %s, masked = %s; SSIM score = %s, masked = %s; l1 score = %s" %
            (inception_score, inception_score_masked, structured_score, structured_score_masked, norm_score))
+    return inception_score, inception_score_masked, structured_score, structured_score_masked, norm_score
 
 
 
 
 if __name__ == "__main__":
-    generated_images_dir = 'results_v1.0/market_PATN_v1.0/test_latest/images'
-    annotations_file_test = 'market_data/market-annotation-test.csv'
+    parser = ArgumentParser('Get IS and SSIM metrics')
+    parser.add_argument('--img_dir', 
+                        default='./results/market_PATN/test_latest/images', 
+                        help='Path to generated images')
+    parser.add_argument('--annotations', 
+                        default='./market_data/market-annotation-test.csv', 
+                        help='Annotations of ground truth')
+    opt = parser.parse_args()
 
-    test(generated_images_dir, annotations_file_test)
+    IS, mask_IS, SSIM, mask_SSIM, _ = test(opt.img_dir, opt.annotations)
+    with open('../%s' % opt.img_dir, 'w') as f:
+        f.write('IS,mask_IS,SSIM,mask_SSIM\n%s,%s,%s,%s' % (IS, mask_IS, SSIM, mask_SSIM))
 
 
 

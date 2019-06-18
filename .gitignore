@@ -3,9 +3,11 @@ results/
 checkpoints/
 env/
 stable/
+~/
 
 *.whl
 *.sh
 *.pyc
 *.pt
 *.pth
+*.swp

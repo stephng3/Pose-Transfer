@@ -14,6 +14,7 @@ import glob
 import scipy.misc
 import math
 import sys
+from tqdm import tqdm, trange
 
 MODEL_DIR = '~/models'
 DATA_URL = 'http://download.tensorflow.org/models/image/imagenet/inception-2015-12-05.tgz'
@@ -35,16 +36,14 @@ def get_inception_score(images, splits=10):
   with tf.Session() as sess:
     preds = []
     n_batches = int(math.ceil(float(len(inps)) / float(bs)))
-    for i in range(n_batches):
-        sys.stdout.write(".")
-        sys.stdout.flush()
+    for i in trange(n_batches, desc='Predicting'):
         inp = inps[(i * bs):min((i + 1) * bs, len(inps))]
         inp = np.concatenate(inp, 0)
         pred = sess.run(softmax, {'ExpandDims:0': inp})
         preds.append(pred)
     preds = np.concatenate(preds, 0)
     scores = []
-    for i in range(splits):
+    for i in trange(splits, desc='Scoring'):
       part = preds[(i * preds.shape[0] // splits):((i + 1) * preds.shape[0] // splits), :]
       kl = part * (np.log(part) - np.log(np.expand_dims(np.mean(part, 0), 0)))
       kl = np.mean(np.sum(kl, 1))
@@ -87,9 +86,9 @@ def _init_inception():
                     new_shape.append(None)
                 else:
                     new_shape.append(s)
-            o._shape = tf.TensorShape(new_shape)
+            o.__dict__['_shape_val'] = tf.TensorShape(new_shape)
     w = sess.graph.get_operation_by_name("softmax/logits/MatMul").inputs[1]
-    logits = tf.matmul(tf.squeeze(pool3), w)
+    logits = tf.matmul(tf.squeeze(pool3, [1, 2]), w)
     softmax = tf.nn.softmax(logits)
 
 if softmax is None:
