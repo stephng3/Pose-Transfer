@@ -131,7 +131,8 @@ if __name__ == "__main__":
     opt = parser.parse_args()
 
     IS, mask_IS, SSIM, mask_SSIM, _ = test(opt.img_dir, opt.annotations)
-    with open('../%s' % opt.img_dir, 'w') as f:
+    res_dir = '/'.join(opt.img_dir.split('/')[:-1])
+    with open('%s/metrics.txt' % res_dir, 'w') as f:
         f.write('IS,mask_IS,SSIM,mask_SSIM\n%s,%s,%s,%s' % (IS, mask_IS, SSIM, mask_SSIM))
 
 

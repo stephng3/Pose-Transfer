@@ -46,7 +46,6 @@ class TransferModel(BaseModel):
                                             opt.n_layers_D, opt.norm, use_sigmoid, opt.init_type, self.gpu_ids,
                                             not opt.no_dropout_D,
                                             n_downsampling = opt.D_n_downsampling)
-
         if not self.isTrain or opt.continue_train:
             which_epoch = opt.which_epoch
             self.load_network(self.netG, 'netG', which_epoch)

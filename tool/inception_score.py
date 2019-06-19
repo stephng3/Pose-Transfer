@@ -3,6 +3,7 @@ from __future__ import absolute_import
 from __future__ import division
 from __future__ import print_function
 
+import os
 import os.path
 import sys
 import tarfile
@@ -16,7 +17,10 @@ import math
 import sys
 from tqdm import tqdm, trange
 
-MODEL_DIR = '~/models'
+try:
+    MODEL_DIR = os.environ['TORCH_HOME'] + 'models' 
+except:
+    MODEL_DIR = '~/models'
 DATA_URL = 'http://download.tensorflow.org/models/image/imagenet/inception-2015-12-05.tgz'
 softmax = None
 

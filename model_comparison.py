@@ -58,7 +58,6 @@ def gather_image(experiments, image_name):
         left = (i + 2) * segment_w
         res.paste(fake, (left, 20))
         draw_text(draw, exp_name, (left, 0, left + segment_w, 20))
-    import pdb; pdb.set_trace()
     return res
 
 
@@ -70,4 +69,3 @@ os.makedirs(opt.save_path, exist_ok=True)
 for image in tqdm(images):
     res = gather_image(experiments, image)
     res.save(pjoin(opt.save_path, image), 'JPEG')
-    import pdb; pdb.set_trace()
