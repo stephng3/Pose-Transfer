@@ -12,6 +12,7 @@ from losses.Cosine_Loss import Cosine_Loss
 import sys
 from models.model_variants import PATNetwork
 
+
 def weights_init_normal(m):
     classname = m.__class__.__name__
     if classname.find('Conv') != -1:
@@ -103,7 +104,8 @@ def get_scheduler(optimizer, opt):
     return scheduler
 
 
-def define_G(input_nc, output_nc, ngf, which_model_netG, norm='batch', use_dropout=False, init_type='normal',
+def define_G(input_nc=[3, 36], output_nc=3, ngf=64, which_model_netG='PATN', norm='batch', use_dropout=False,
+             init_type='normal',
              gpu_ids=[], n_downsampling=2):
     netG = None
     use_gpu = len(gpu_ids) > 0
@@ -115,7 +117,7 @@ def define_G(input_nc, output_nc, ngf, which_model_netG, norm='batch', use_dropo
     if which_model_netG == 'PATN':
         assert len(input_nc) == 2
         netG = PATNetwork(input_nc, output_nc, ngf, norm_layer=norm_layer, use_dropout=use_dropout,
-                                           n_blocks=9, gpu_ids=gpu_ids, n_downsampling=n_downsampling)
+                          n_blocks=9, gpu_ids=gpu_ids, n_downsampling=n_downsampling)
     else:
         raise NotImplementedError('Generator model name [%s] is not recognized' % which_model_netG)
     if len(gpu_ids) > 0:
@@ -210,6 +212,7 @@ class GANLoss(nn.Module):
         target_tensor = self.get_target_tensor(input, target_is_real)
         return self.loss(input, target_tensor)
 
+
 # Define a resnet block
 class ResnetBlock(nn.Module):
     def __init__(self, dim, padding_type, norm_layer, use_dropout, use_bias):
@@ -251,6 +254,7 @@ class ResnetBlock(nn.Module):
     def forward(self, x):
         out = x + self.conv_block(x)
         return out
+
 
 class ResnetDiscriminator(nn.Module):
     def __init__(self, input_nc, ngf=64, norm_layer=nn.BatchNorm2d, use_dropout=False, n_blocks=6, gpu_ids=[],
@@ -314,4 +318,3 @@ class ResnetDiscriminator(nn.Module):
             return nn.parallel.data_parallel(self.model, input, self.gpu_ids)
         else:
             return self.model(input)
-

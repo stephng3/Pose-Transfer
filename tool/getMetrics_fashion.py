@@ -1,5 +1,5 @@
 import os
-from inception_score import get_inception_score
+from tool.inception_score import get_inception_score
 
 from skimage.io import imread, imsave
 from skimage.measure import compare_ssim

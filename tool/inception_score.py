@@ -5,6 +5,7 @@ from __future__ import print_function
 
 import os
 import os.path
+import os
 import sys
 import tarfile
 
@@ -18,7 +19,7 @@ import sys
 from tqdm import tqdm, trange
 
 try:
-    MODEL_DIR = os.environ['TORCH_HOME'] + 'models' 
+    MODEL_DIR = os.environ['TORCH_HOME'] + 'models'
 except:
     MODEL_DIR = '~/models'
 DATA_URL = 'http://download.tensorflow.org/models/image/imagenet/inception-2015-12-05.tgz'

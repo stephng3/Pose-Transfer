@@ -1,11 +1,12 @@
 import os
-from inception_score import get_inception_score
+from tool.inception_score import get_inception_score
 
 from skimage.io import imread, imsave
 from skimage.measure import compare_ssim
 
 import numpy as np
 import pandas as pd
+from tool.pose_utils import load_pose_cords_from_strings, produce_ma_mask
 
 from tqdm import tqdm
 import re
@@ -38,16 +39,15 @@ def save_images(input_images, target_images, generated_images, names, output_fol
 
 
 def create_masked_image(names, images, annotation_file):
-    import pose_utils
     masked_images = []
     df = pd.read_csv(annotation_file, sep=':')
-    for name, image in zip(names, images):
+    for name, image in tqdm(zip(names, images), desc='Generating masked images'):
         to = name[1]
         ano_to = df[df['name'] == to].iloc[0]
 
-        kp_to = pose_utils.load_pose_cords_from_strings(ano_to['keypoints_y'], ano_to['keypoints_x'])
+        kp_to = load_pose_cords_from_strings(ano_to['keypoints_y'], ano_to['keypoints_x'])
 
-        mask = pose_utils.produce_ma_mask(kp_to, image.shape[:2])
+        mask =  produce_ma_mask(kp_to, image.shape[:2])
         masked_images.append(image * mask[..., np.newaxis])
 
     return masked_images

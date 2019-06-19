@@ -5,6 +5,8 @@ env/
 stable/
 ~/
 
+*pynb*
+
 *.whl
 *.sh
 *.pyc
