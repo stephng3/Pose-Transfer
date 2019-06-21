@@ -113,7 +113,6 @@ class TransferModel(BaseModel):
     def forward(self):
         G_input = [self.input_P1,
                    torch.cat((self.input_BP1, self.input_BP2), 1)]
-        import pdb;pdb.set_trace()
         self.fake_p2 = self.netG(G_input)
 
 

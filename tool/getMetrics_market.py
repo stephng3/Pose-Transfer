@@ -11,6 +11,7 @@ from tool.pose_utils import load_pose_cords_from_strings, produce_ma_mask
 from tqdm import tqdm
 import re
 from argparse import ArgumentParser
+from concurrent.futures import ProcessPoolExecutor
 
 def l1_score(generated_images, reference_images):
     score_list = []
@@ -19,14 +20,25 @@ def l1_score(generated_images, reference_images):
         score_list.append(score)
     return np.mean(score_list)
 
+def calculate_ssim(zipped):
+    r,g = zipped
+    return compare_ssim(r, g, gaussian_weights=True, sigma=1.5,
+                        use_sample_covariance=False, multichannel=True,
+                        data_range=g.max() - g.min())
 
-def ssim_score(generated_images, reference_images):
+
+def ssim_score(generated_images, reference_images, nThreads=0):
     ssim_score_list = []
-    for reference_image, generated_image in zip(reference_images, generated_images):
-        ssim = compare_ssim(reference_image, generated_image, gaussian_weights=True, sigma=1.5,
-                            use_sample_covariance=False, multichannel=True,
-                            data_range=generated_image.max() - generated_image.min())
-        ssim_score_list.append(ssim)
+    inputs = tqdm(zip(reference_images, generated_images), desc='Calculating SSIM', total=len(reference_images))
+    with ProcessPoolExecutor(max_workers=nThreads) as executor:
+        ssim_score_list = [ssim for ssim in executor.map(calculate_ssim, inputs)]
+
+
+#    for reference_image, generated_image in zip(reference_images, generated_images):
+#        ssim = compare_ssim(reference_image, generated_image, gaussian_weights=True, sigma=1.5,
+#                            use_sample_covariance=False, multichannel=True,
+#                            data_range=generated_image.max() - generated_image.min())
+#        ssim_score_list.append(ssim)
     return np.mean(ssim_score_list)
 
 
@@ -37,18 +49,30 @@ def save_images(input_images, target_images, generated_images, names, output_fol
         res_name = str('_'.join(images[-1])) + '.png'
         imsave(os.path.join(output_folder, res_name), np.concatenate(images[:-1], axis=1))
 
+def mask_image(inputs):
+    image, ano_to = inputs
+    kp_to = load_pose_cords_from_strings(ano_to['keypoints_y'], ano_to['keypoints_x'])
+    mask =  produce_ma_mask(kp_to, image.shape[:2])
+    return image * mask[...,np.newaxis]
 
-def create_masked_image(names, images, annotation_file):
+def create_masked_image(names, images, annotation_file, nThreads=0):
     masked_images = []
     df = pd.read_csv(annotation_file, sep=':')
-    for name, image in tqdm(zip(names, images), desc='Generating masked images'):
-        to = name[1]
-        ano_to = df[df['name'] == to].iloc[0]
+    ano_to = [df[df['name'] == name[1]].iloc[0] for name in names]
+    assert(len(names) == len(images) and len(images) == len(ano_to))
+    inputs = tqdm(zip(images, ano_to), desc='Generating masked images', total=len(images))
 
-        kp_to = load_pose_cords_from_strings(ano_to['keypoints_y'], ano_to['keypoints_x'])
-
-        mask =  produce_ma_mask(kp_to, image.shape[:2])
-        masked_images.append(image * mask[..., np.newaxis])
+    with ProcessPoolExecutor(max_workers=nThreads) as executor:
+        masked_images = [masked for masked in executor.map(mask_image, inputs)]
+        
+#    for name, image in tqdm(zip(names, images), desc='Generating masked images', total=len(names)):
+#        to = name[1]
+#        ano_to = df[df['name'] == to].iloc[0]
+#
+#        kp_to = load_pose_cords_from_strings(ano_to['keypoints_y'], ano_to['keypoints_x'])
+#
+#        mask =  produce_ma_mask(kp_to, image.shape[:2])
+#        masked_images.append(image * mask[..., np.newaxis])
 
     return masked_images
 

@@ -1,7 +1,7 @@
 import torch.utils.data
 import torch
 from data.base_data_loader import BaseDataLoader
-
+import math
 
 def CreateDataset(dataroot,
                   phase,
@@ -48,12 +48,13 @@ class CustomDatasetDataLoader(BaseDataLoader):
                                                       batch_size=batchSize,
                                                       shuffle=not serial_batches,
                                                       num_workers=int(nThreads))
+        self.batchSize = batchSize
 
     def load_data(self):
         return self
 
     def __len__(self):
-        return min(len(self.dataset), self.max_dataset_size)
+        return math.ceil(min(len(self.dataset), self.max_dataset_size) / self.batchSize)
 
     def __iter__(self):
         for i, data in enumerate(self.dataloader):

@@ -104,7 +104,7 @@ def get_scheduler(optimizer, opt):
     return scheduler
 
 
-def define_G(input_nc=[3, 36], output_nc=3, ngf=64, which_model_netG='PATN', norm='batch', use_dropout=False,
+def define_G(input_nc=[3, 36], output_nc=3, ngf=64, which_model_netG='PATN', norm='batch', use_dropout=True,
              init_type='normal',
              gpu_ids=[], n_downsampling=2):
     netG = None
@@ -113,7 +113,6 @@ def define_G(input_nc=[3, 36], output_nc=3, ngf=64, which_model_netG='PATN', nor
 
     if use_gpu:
         assert (torch.cuda.is_available())
-
     if which_model_netG == 'PATN':
         assert len(input_nc) == 2
         netG = PATNetwork(input_nc, output_nc, ngf, norm_layer=norm_layer, use_dropout=use_dropout,

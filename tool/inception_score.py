@@ -17,17 +17,20 @@ import scipy.misc
 import math
 import sys
 from tqdm import tqdm, trange
+from concurrent.futures import ProcessPoolExecutor
+from functools import wraps
+
 
 try:
     MODEL_DIR = os.environ['TORCH_HOME'] + 'models'
 except:
     MODEL_DIR = '~/models'
 DATA_URL = 'http://download.tensorflow.org/models/image/imagenet/inception-2015-12-05.tgz'
-softmax = None
 
 # Call this function with list of images. Each of elements should be a
 # numpy array with values ranging from 0 to 255.
 def get_inception_score(images, splits=10):
+  softmax = _init_inception()
   #assert(type(images) == list)
   assert(type(images[0]) == np.ndarray)
   assert(len(images[0].shape) == 3)
@@ -37,8 +40,8 @@ def get_inception_score(images, splits=10):
   for img in images:
     img = img.astype(np.float32)
     inps.append(np.expand_dims(img, 0))
-  bs = 10
-  with tf.Session() as sess:
+  bs = 100
+  with tf.Session(config=tf.ConfigProto(use_per_session_threads=True)) as sess:
     preds = []
     n_batches = int(math.ceil(float(len(inps)) / float(bs)))
     for i in trange(n_batches, desc='Predicting'):
@@ -57,7 +60,6 @@ def get_inception_score(images, splits=10):
 
 # This function is called automatically.
 def _init_inception():
-  global softmax
   if not os.path.exists(MODEL_DIR):
     os.makedirs(MODEL_DIR)
   filename = DATA_URL.split('/')[-1]
@@ -78,7 +80,7 @@ def _init_inception():
     graph_def.ParseFromString(f.read())
     _ = tf.import_graph_def(graph_def, name='')
   # Works with an arbitrary minibatch size.
-  with tf.Session() as sess:
+  with tf.Session(config=tf.ConfigProto(use_per_session_threads=True)) as sess:
     pool3 = sess.graph.get_tensor_by_name('pool_3:0')
     ops = pool3.graph.get_operations()
     for op_idx, op in enumerate(ops):
@@ -94,7 +96,5 @@ def _init_inception():
             o.__dict__['_shape_val'] = tf.TensorShape(new_shape)
     w = sess.graph.get_operation_by_name("softmax/logits/MatMul").inputs[1]
     logits = tf.matmul(tf.squeeze(pool3, [1, 2]), w)
-    softmax = tf.nn.softmax(logits)
+    return tf.nn.softmax(logits)
 
-if softmax is None:
-    _init_inception()
