@@ -11,12 +11,14 @@ from options.test_options import TestOptions
 from data.data_loader import CreateDataLoader
 from models.models import create_model
 from tqdm import tqdm, trange
+from concurrent.futures import ProcessPoolExecutor
 
 parser = ArgumentParser('compare model outputs on test images')
 parser.add_argument('--dataset', default='market')
 parser.add_argument('--experiments', default='market_PATN')
 parser.add_argument('--save_path', type=str, default='./results/market_meta', help='saves results here.')
 parser.add_argument('--root_dir', type=str, default='./results', help='root directory of test results.')
+parser.add_argument('--n_threads', type=int, default=-1, help='number of workers for multiprocessing')
 
 font = ImageFont.truetype('./fonts/cmunci.ttf', size=8)
 
@@ -49,7 +51,7 @@ def gather_image(experiments, image_name):
     gt = base.crop((0, 0, segment_w, base.height + 20))
     target = base.crop((segment_w * 2, 0, segment_w * 3, base.height + 20))
     res.paste(gt, (0, 20))
-    draw_text(draw, 'Gt', (0, 0, segment_w, 20))
+    draw_text(draw, 'Pc', (0, 0, segment_w, 20))
     res.paste(target, (segment_w, 20))
     draw_text(draw, 'Pt', (segment_w, 0, segment_w * 2, 20))
     for i, (exp_dir, exp_name) in enumerate(experiments):
@@ -57,15 +59,27 @@ def gather_image(experiments, image_name):
         fake = get_fake(path)
         left = (i + 2) * segment_w
         res.paste(fake, (left, 20))
-        draw_text(draw, exp_name, (left, 0, left + segment_w, 20))
+        label = ''.join(exp_name.split('_')[1:])
+        draw_text(draw, label, (left, 0, left + segment_w, 20))
     return res
 
+    
 
 opt = parser.parse_args()
 experiments = get_experiments(opt.experiments.split(','), opt.root_dir)
 images = os.listdir(experiments[0][0])
 os.makedirs(opt.save_path, exist_ok=True)
 
-for image in tqdm(images):
-    res = gather_image(experiments, image)
-    res.save(pjoin(opt.save_path, image), 'JPEG')
+def gather_and_save(image_name):
+    global experiments
+    global opt
+    res = gather_image(experiments, image_name)
+    res.save(pjoin(opt.save_path, image_name), 'JPEG')
+
+if opt.n_threads > 0:
+    with ProcessPoolExecutor(opt.n_threads) as executor:
+        results = executor.map(gather_and_save, tqdm(images))
+else:
+    for image in tqdm(images):
+        res = gather_image(experiments, image)
+        res.save(pjoin(opt.save_path, image), 'JPEG')

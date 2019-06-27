@@ -97,4 +97,3 @@ def _init_inception():
     w = sess.graph.get_operation_by_name("softmax/logits/MatMul").inputs[1]
     logits = tf.matmul(tf.squeeze(pool3, [1, 2]), w)
     return tf.nn.softmax(logits)
-

@@ -54,7 +54,7 @@ class CustomDatasetDataLoader(BaseDataLoader):
         return self
 
     def __len__(self):
-        return math.ceil(min(len(self.dataset), self.max_dataset_size) / self.batchSize)
+        return math.ceil(min(len(self.dataset), self.max_dataset_size * self.batchSize) / self.batchSize)
 
     def __iter__(self):
         for i, data in enumerate(self.dataloader):
