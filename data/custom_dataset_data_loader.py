@@ -18,7 +18,9 @@ def CreateDataset(dataroot,
     if dataset_mode == 'keypoint':
         from data.keypoint import KeyDataset
         dataset = KeyDataset()
-
+    elif dataset_mode == 'multipie':
+        from data.keypoint import MultiPIEDataset
+        dataset = MultiPIEDataset()
     else:
         raise ValueError("Dataset [%s] not recognized." % opt.dataset_mode)
 

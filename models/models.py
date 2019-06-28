@@ -4,7 +4,7 @@ def create_model(opt):
     print(opt.model)
 
     if opt.model == 'PATN':
-        assert opt.dataset_mode == 'keypoint'
+        assert (opt.dataset_mode == 'keypoint' or opt.dataset_mode == 'multipie')
         from .PATN import TransferModel
         model = TransferModel()
 
