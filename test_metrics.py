@@ -84,7 +84,7 @@ if __name__ == '__main__':
     parser = ArgumentParser('Log metrics for an experiment over multiple epochs')
     parser.add_argument('--dataroot', default='./market_data', help='Path to image and annotation data')
     parser.add_argument('--checkpoint_dir', default='./checkpoints/market_PATN', help='Path to image and annotation data')
-    parser.add_argument('--dataset', default='market', help='Which dataset (fashion or market)', choices=['market', 'fashion'])
+    parser.add_argument('--dataset', default='market', help='Which dataset (fashion or market)', choices=['market', 'fashion', 'multipie'])
     parser.add_argument('--nThreads', type=int, default=0, help='Workers for dataloader')
     parser.add_argument('--nPool', type=int, default=0, help='Workers for metrics calculation')
     parser.add_argument('--gpu_ids', type=device_array, default=[], help='GPU ids for DataParallel, -1 for CPU-only')
@@ -94,15 +94,21 @@ if __name__ == '__main__':
     if opt.dataset == 'fashion':
         pairs_file = 'fasion-resize-pairs-test.csv'
         anno_file = 'fasion-resize-annotation-test.csv'
-    else:
+        dataset_mode = 'keypoint'
+    elif opt.dataset == 'market':
         pairs_file = 'market-pairs-test.csv'
         anno_file = 'market-annotation-test.csv'
+        dataset_mode = 'keypoint'
+    elif opt.dataset == 'multipie':
+        pairs_file = 'multipie_pairs_test.csv'
+        anno_file = 'multipie_cropped_annotations.csv'
+        dataset_mode = 'multipie'
 
     data_loader = GDataLoader()
     data_loader.initialize(opt.dataroot,
                            'test',
                            pjoin(opt.dataroot, pairs_file),
-                           opt.batch_size, True, opt.nThreads, max_dataset_size = opt.max_dataset_size)
+                           opt.batch_size, True, opt.nThreads, max_dataset_size = opt.max_dataset_size, dataset_mode=dataset_mode)
     with open(pjoin(opt.checkpoint_dir, 'metrics.txt'), 'w+') as f:
         f.write('-------Experiment %s--------\n' % opt.checkpoint_dir.split('/')[-1])
 
