@@ -9,6 +9,7 @@ import collections
 
 from skimage.draw import circle, line_aa, polygon
 
+
 # Converts a Tensor into a Numpy array
 # |imtype|: the desired type of the converted numpy array
 def tensor2im(image_tensor, imtype=np.uint8):
@@ -19,27 +20,71 @@ def tensor2im(image_tensor, imtype=np.uint8):
     return image_numpy.astype(imtype)
 
 
-# draw pose img
-LIMB_SEQ = [[1,2], [1,5], [2,3], [3,4], [5,6], [6,7], [1,8], [8,9],
-           [9,10], [1,11], [11,12], [12,13], [1,0], [0,14], [14,16],
-           [0,15], [15,17], [2,16], [5,17]]
-
-COLORS = [[255, 0, 0], [255, 85, 0], [255, 170, 0], [255, 255, 0], [170, 255, 0], [85, 255, 0], [0, 255, 0],
-          [0, 255, 85], [0, 255, 170], [0, 255, 255], [0, 170, 255], [0, 85, 255], [0, 0, 255], [85, 0, 255],
-          [170, 0, 255], [255, 0, 255], [255, 0, 170], [255, 0, 85]]
-
-
-LABELS = ['nose', 'neck', 'Rsho', 'Relb', 'Rwri', 'Lsho', 'Lelb', 'Lwri',
-               'Rhip', 'Rkne', 'Rank', 'Lhip', 'Lkne', 'Lank', 'Leye', 'Reye', 'Lear', 'Rear']
-
 MISSING_VALUE = -1
+
+
+def get_settings(datatype):
+    RED = [255, 0, 0]
+    GREEN = [0, 255, 0]
+    BLUE = [0, 85, 255]
+    PURPLE = [255, 0, 255]
+
+    pose_labels = ['nose', 'neck', 'Rsho', 'Relb', 'Rwri', 'Lsho', 'Lelb', 'Lwri',
+                   'Rhip', 'Rkne', 'Rank', 'Lhip', 'Lkne', 'Lank', 'Leye', 'Reye', 'Lear', 'Rear']
+
+    pose_connections = [[1, 2], [1, 5], [2, 3], [3, 4], [5, 6], [6, 7], [1, 8], [8, 9],
+                        [9, 10], [1, 11], [11, 12], [12, 13], [1, 0], [0, 14], [14, 16],
+                        [0, 15], [15, 17], [2, 16], [5, 17]]
+
+    pose_colors = [[255, 0, 0], [255, 85, 0], [255, 170, 0], [255, 255, 0], [170, 255, 0], [85, 255, 0], [0, 255, 0],
+                   [0, 255, 85], [0, 255, 170], [0, 255, 255], [0, 170, 255], [0, 85, 255], [0, 0, 255], [85, 0, 255],
+                   [170, 0, 255], [255, 0, 255], [255, 0, 170], [255, 0, 85]]
+
+    mpie_labels = ['chin',
+                   'down_out_profile_01',
+                   'down_out_profile_03',
+                   'down_out_profile_06',
+                   'down_out_profile_08',
+                   'left_eye_center',  # 5
+                   'left_eyebrow_left',
+                   'left_eyebrow_right',
+                   'mouth_bottom_lip_down',
+                   'mouth_left',
+                   'mouth_right',  # 10
+                   'mouth_top_lip_up',
+                   'nose_center',
+                   'nose_nasal_bottom',
+                   'right_eye_center',
+                   'right_eyebrow_left',  # 15
+                   'right_eyebrow_right',
+                   'up_out_profile_02',
+                   'up_out_profile_06',
+                   'up_out_profile_10']
+
+    mpie_connections = [[1, 2], [2, 0], [0, 3], [3, 4],  # jaw
+                        [9, 10], [9, 11], [9, 8], [10, 11], [10, 8],  # lips
+                        [6, 7], [5, 6], [5, 7],  # left eye
+                        [15, 16], [14, 15], [14, 16]]  # right eye
+    mpie_colors = [RED, RED, RED, RED, RED,
+                   GREEN, GREEN, GREEN,
+                   PURPLE, PURPLE, PURPLE, PURPLE,
+                   BLUE, BLUE,
+                   GREEN, GREEN, GREEN,
+                   RED, RED, RED]
+    if datatype == 'keypoint':
+        return pose_connections, pose_colors
+    elif datatype == 'multipie':
+        return mpie_connections, mpie_colors
+    else:
+        raise Exception('Dataset %s not implemented!' % datatype)
+
 
 def map_to_cord(pose_map, threshold=0.1):
     all_peaks = [[] for i in range(18)]
     pose_map = pose_map[..., :18]
 
-    y, x, z = np.where(np.logical_and(pose_map == pose_map.max(axis = (0, 1)),
-                                     pose_map > threshold))
+    y, x, z = np.where(np.logical_and(pose_map == pose_map.max(axis=(0, 1)),
+                                      pose_map > threshold))
     for x_i, y_i, z_i in zip(x, y, z):
         all_peaks[z_i].append([x_i, y_i])
 
@@ -56,6 +101,7 @@ def map_to_cord(pose_map, threshold=0.1):
 
     return np.concatenate([np.expand_dims(y_values, -1), np.expand_dims(x_values, -1)], axis=1)
 
+
 def draw_pose_from_map(pose_map, threshold=0.1, **kwargs):
     # CHW -> HCW -> HWC
     pose_map = pose_map[0].cpu().transpose(1, 0).transpose(2, 1).numpy()
@@ -65,12 +111,14 @@ def draw_pose_from_map(pose_map, threshold=0.1, **kwargs):
 
 
 # draw pose from map
-def draw_pose_from_cords(pose_joints, img_size, radius=2, draw_joints=True):
-    colors = np.zeros(shape=img_size + (3, ), dtype=np.uint8)
+def draw_pose_from_cords(pose_joints, img_size, radius=2, draw_joints=True, datatype='keypoint'):
+    CONNECTIONS, COLORS = get_settings(datatype)
+
+    colors = np.zeros(shape=img_size + (3,), dtype=np.uint8)
     mask = np.zeros(shape=img_size, dtype=bool)
 
     if draw_joints:
-        for f, t in LIMB_SEQ:
+        for f, t in CONNECTIONS:
             from_missing = pose_joints[f][0] == MISSING_VALUE or pose_joints[f][1] == MISSING_VALUE
             to_missing = pose_joints[t][0] == MISSING_VALUE or pose_joints[t][1] == MISSING_VALUE
             if from_missing or to_missing:
@@ -106,21 +154,24 @@ def save_image(image_numpy, image_path):
     image_pil = Image.fromarray(image_numpy)
     image_pil.save(image_path)
 
+
 def info(object, spacing=10, collapse=1):
     """Print methods and doc strings.
     Takes module, class, list, dictionary, or string."""
     methodList = [e for e in dir(object) if isinstance(getattr(object, e), collections.Callable)]
     processFunc = collapse and (lambda s: " ".join(s.split())) or (lambda s: s)
-    print( "\n".join(["%s %s" %
+    print("\n".join(["%s %s" %
                      (method.ljust(spacing),
                       processFunc(str(getattr(object, method).__doc__)))
-                     for method in methodList]) )
+                     for method in methodList]))
+
 
 def varname(p):
     for line in inspect.getframeinfo(inspect.currentframe().f_back)[3]:
         m = re.search(r'\bvarname\s*\(\s*([A-Za-z_][A-Za-z0-9_]*)\s*\)', line)
         if m:
             return m.group(1)
+
 
 def print_numpy(x, val=True, shp=False):
     x = x.astype(np.float64)
